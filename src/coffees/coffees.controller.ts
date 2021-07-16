@@ -1,5 +1,7 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Res } from '@nestjs/common';
-import { PaginationQueryDto } from 'src/common/dt/pagination-query.dto';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Res, SetMetadata, UsePipes } from '@nestjs/common';
+import { Public } from 'src/common/decorators/public.decorator';
+import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
+import { ParseIntPipe } from 'src/common/pipes/parse-int.pipe';
 import { CoffeesService } from './coffees.service';
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
@@ -10,14 +12,14 @@ export class CoffeesController {
     // visibility modifier(private) 또는 Readonly를 가진 constructor parameter는 class property로 자동 정의된다.
     constructor(private readonly coffeesService: CoffeesService) {}
 
+    @Public()
     @Get()
     findAll(@Query() paginationQuery: PaginationQueryDto) {
-
         return this.coffeesService.findAll(paginationQuery);
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string) {
+    findOne(@Param('id', ParseIntPipe) id: string) {
         return  this.coffeesService.findOne(id);
     }
 
