@@ -24,7 +24,7 @@ link: https://docs.nestjs.com/first-steps
 
 ## Routing
 
-```
+```ts
 import { Controller, Get } from '@nestjs/common';
 
 @Controller('user')
@@ -53,7 +53,7 @@ express 등의 라이브러리를 이용할 수 있다. method handler의 input�
 
 handler signature에 `@Req()`를 추가한다.
 
-```
+```ts
 import { Controller, Get, Req } from '@nestjs/common';
 import { Request } from 'express';
 
@@ -68,7 +68,7 @@ export class UserController {
 
 ```
 
-```
+```ts
 @Get()
 findAll(@Query() paginationQuery) {
     const { limit, offset } = paginationQuery;
@@ -84,7 +84,7 @@ request object는 **request query string, parameter, HTTP headers, body property
 
 - `POST` 를 사용하는 방법은 다음과 같다.
 
-```
+```ts
 import { Controller, Get, Post, Req } from '@nestjs/common';
 import { Request } from 'express';
 
@@ -105,7 +105,7 @@ export class UserController {
 
 ## Status code
 
-```
+```ts
 @Post()
 @HttpCode(204)
 create() {
@@ -119,7 +119,7 @@ create() {
 
 ## Route parameters
 
-```
+```ts
 @Get(':id')
 findOne(@Param() params): string {
   console.log(params.id);
@@ -130,7 +130,7 @@ findOne(@Param() params): string {
 
 - 또는 직접 route parameter에 접근할 수도 있다.
 
-```
+```ts
 @Get('profile/:id')
 findProfile(@Param('id') id: string): string {
   console.log(id);
@@ -141,7 +141,7 @@ findProfile(@Param('id') id: string): string {
 
 ## Asynchronicity
 
-```
+```ts
 @Get()
 async findAll(): Promise<any[]> {
   return [];
@@ -158,7 +158,7 @@ async findAll(): Promise<any[]> {
 - 일단 **DTO**(Data Transfer Object)를 만들어줘야 한다. 클래스나 인터페이스를 이용하여 만들 수 있는데, 클래스가 선호된다(클래스는 런타임에도 존재하지만 인터페이스는 제거됨).
 - cli `nest generate class coffees/dto/create-coffee.dto --no-spec`
 
-```
+```ts
 export class CreatePostDto {
   title: string;
   content: string;
@@ -168,7 +168,7 @@ export class CreatePostDto {
 
 - 
 
-```
+```ts
 @Post()
 create(@Body() createPostDto: CreatePostDto): string {
   return 'This action adds a new post';
@@ -178,7 +178,7 @@ create(@Body() createPostDto: CreatePostDto): string {
 
 ## Library-specific approach
 
-```
+```ts
 import { Body, Controller, Get, HttpStatus, Post, Res } from '@nestjs/common';
 import { CreatePostDto } from './create-post.dto';
 import { Response } from 'express';
@@ -212,7 +212,7 @@ export class PostController {
 
 nestjs/common을 이용하자.
 
-```
+```ts
 const coffee =  this.coffees.find(item => item.id === +id);
 if (!coffee) {
     throw new HttpException(`Coffee #${id} not found`, HttpStatus.NOT_FOUND);
@@ -223,7 +223,7 @@ return coffee;
 
 - 또는
 
-```
+```ts
 if (!coffee) {
     throw new NotFoundException(`Coffee #${id} not found`);
 }
@@ -232,7 +232,7 @@ if (!coffee) {
 
 # Validation Pipe
 
-```
+```ts
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
@@ -245,7 +245,7 @@ async function bootstrap() {
 
 `npm i class-validator class-transformer`
 
-```
+```ts
 import { IsString } from "class-validator";
 
 export class CreateCoffeeDto {
@@ -263,7 +263,7 @@ export class CreateCoffeeDto {
 
 정상적인 Request body를 보내지 않으면 다음과 같은 json을 리턴한다.
 
-```
+```ts
 {
   "statusCode": 400,
   "message": [
@@ -277,7 +277,7 @@ export class CreateCoffeeDto {
 
 `npm i @nestjs/mapped-types`
 
-```
+```ts
 import { PartialType } from "@nestjs/mapped-types";
 import { CreateCoffeeDto } from "./create-coffee.dto";
 
@@ -289,7 +289,7 @@ export class UpdateCoffeeDto extends PartialType(CreateCoffeeDto){ }
 
 - docker-compose.yml
 
-```
+```ts
 version: "3"
 services:
   db:
@@ -312,7 +312,7 @@ services:
 
 event.entity.ts
 
-```
+```ts
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
@@ -334,7 +334,7 @@ export class Event {
 
 - coffees.service.ts
 
-```
+```ts
 @Injectable()
 export class CoffeesService {
   constructor(
@@ -385,7 +385,7 @@ shell에서
 
 migrations file을 바꿔준다.
 
-```
+```ts
 import {MigrationInterface, QueryRunner} from "typeorm";
 
 export class CoffeeRefactor1626325978666 implements MigrationInterface {
@@ -423,7 +423,7 @@ typeorm은 db의 entity와 현재 entity 파일을 비교하여 직접 migration
 
 - coffees.module.ts에서 `CoffeesService` export
 
-```
+```ts
 @Module({
     ...
     exports: [CoffeesService],
@@ -433,7 +433,7 @@ typeorm은 db의 entity와 현재 entity 파일을 비교하여 직접 migration
 
 - coffee-rating.module.ts에서 `CoffeesModule` import
 
-```
+```ts
 import { Module } from '@nestjs/common';
 import { CoffeesModule } from 'src/coffees/coffees.module';
 import { CoffeeRatingService } from './coffee-rating.service';
@@ -448,7 +448,7 @@ export class CoffeeRatingModule {}
 
 - coffee-rating.service.ts에서 `CoffeesService` import
 
-```
+```ts
 import { Injectable } from '@nestjs/common';
 import { CoffeesService } from 'src/coffees/coffees.service';
 
@@ -472,7 +472,7 @@ export class CoffeeRatingService {
 
 ### Value based provider
 
-```
+```ts
 @Module({
     imports: [TypeOrmModule.forFeature([Coffee, Flavor, Event])],
     controllers: [CoffeesController],
@@ -486,7 +486,7 @@ export class CoffeeRatingService {
 
 그래서
 
-```
+```ts
 class MockCoffeeService {}
 
 @Module({
@@ -505,7 +505,7 @@ export class CoffeesModule {}
 
 - coffees.module.ts
 
-```
+```ts
 @Module({
     ...
     providers: [CoffeesService, { provide: 'COFFEE_BRANDS', useValue: ['buddy brew', 'nescafe']}],
@@ -515,7 +515,7 @@ export class CoffeesModule {}
 
 이용할 때에는
 
-```
+```ts
 @Injectable()
 export class CoffeesService {
   constructor(
@@ -532,7 +532,7 @@ typo 오류 등을 방지하기 위해서 TOKEN들을 다른 파일에 저장해
 
 - "useClass" syntax
 
-```
+```ts
  providers: [
         CoffeesService,
         {
@@ -548,7 +548,7 @@ typo 오류 등을 방지하기 위해서 TOKEN들을 다른 파일에 저장해
 - "useFactory" syntax
 - can inject other providers needed to compute the returning result
 
-```
+```ts
 
 @Module({
     imports: [TypeOrmModule.forFeature([Coffee, Flavor, Event])],
@@ -569,7 +569,7 @@ typo 오류 등을 방지하기 위해서 TOKEN들을 다른 파일에 저장해
 
 ### Leverage Async Provider
 
-```
+```ts
 // Asynchronous "useFactory" (async provider example)
 {
   provide: 'COFFEE_BRANDS',
@@ -593,7 +593,7 @@ typo 오류 등을 방지하기 위해서 TOKEN들을 다른 파일에 저장해
 위에서 다룬 모듈들은 static module이었다.
 static modules can't have their providers be configured by a module that is consuming it
 
-```
+```ts
 // Generate a DatabaseModule
 nest g mo database
 
@@ -647,7 +647,7 @@ imports: [
 - Node는 싱글 스레드임
 - Nest에서 모든 provider는 기본적으로 singleton임
 
-```
+```ts
 @Injectable({ scope: Scope.DEFAULT })
 export class CoffeesService {
 }
@@ -662,7 +662,7 @@ export class CoffeesService {
 1. **Transient**
 - NOT shared across consumers
 
-```
+```ts
 @Injectable({ scope: Scope.TRANSIENT })
 export class CoffeesService {
 
@@ -680,7 +680,7 @@ export class CoffeesService {
 -> Injection chain의 bubble-up이 일어난다. Request-scoped에 의존하는 controller 클래스도 Request-scoped가 된다는 것
 - also can inject the original Request Object {}
 
-```
+```ts
 // Injecting the ORIGINAL Request object
 @Injectable({ scope: Scope.REQUEST })
 export class CoffeesService {
@@ -701,7 +701,7 @@ export class CoffeesService {
 
 - 이런식으로 이용할 수 있다. default로 value는 string으로 가져오게 된다.
 
-```
+```ts
 TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DATABASE_HOST,
@@ -719,7 +719,7 @@ TypeOrmModule.forRoot({
 
 - 기본적으로 ConfigModule은 root 디렉토리의 `.env` 파일을 찾는다. 이를 바꿔주려면?
 
-```
+```ts
 ConfigModule.forRoot({
   envFilePath: '.environment’,
 });
@@ -734,7 +734,7 @@ ConfigModule.forRoot({
 - env 변수가 존재하지 않거나, 룰을 따르지 않을 경우의 예외처리
 - joi package를 이용한다. object schema를 정의할 수 있다.
 
-```
+```ts
 // Install neccessary dependencies
 $ npm install @hapi/joi
 $ npm install --save-dev @types/hapi__joi
@@ -758,7 +758,7 @@ ConfigModule.forRoot({
 - 모든 config value에 대해 `get()`
 - 이용하기 위해서는 해당 모듈에 import 해줘야한다.
 
-```
+```ts
 @Module({
     imports: [TypeOrmModule.forFeature([Coffee, Flavor, Event]), ConfigModule],
     ...
@@ -766,7 +766,7 @@ ConfigModule.forRoot({
 
 ```
 
-```
+```ts
 /* Utilize ConfigService */
 import { ConfigService } from '@nestjs/config';
 
@@ -788,7 +788,7 @@ console.log(databaseHost);
 - 하나의 파일에 한 그룹을 관리해보도록 하자 .
 - /src/config에 app.config.ts 파일 생성
 
-```
+```ts
 /* /src/config/app.config.ts File */
 export default () => ({
   environment: process.env.NODE_ENV || 'development',
@@ -827,7 +827,7 @@ const databaseHost = this.configService.get('database.host', 'localhost');
 
 - when we have very complex project structure
 
-```jsx
+```ts
 /* /src/coffees/coffees.config.ts File */
 export default registerAs('coffees', () => ({ // 👈
   foo: 'bar', // 👈
@@ -868,7 +868,7 @@ constructor(
 
 ## Asynchronously Configure Dynamic Modules
 
-```
+```ts
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -893,7 +893,7 @@ constructor(
 - 위의 app.module.ts 파일에서 ConfigModule과 TypeormModule을 import해주는 순서를 바꿔주면 에러가 난다. → process.env파일에서 key 값을 가져올 수 없기 때문.
 - 이를 해결하기 위해서 비동기적으로 configuration option을 가져오는 `forRootAsync()` method를 이용할 수 있다.
 
-```
+```ts
 /* forRootAsync() */
 TypeOrmModule.forRootAsync({ // 👈
   useFactory: () => ({
@@ -941,7 +941,7 @@ override a method
 - NESTJS의 built-in exception layer
 - 우리가 처리하지 않은 예외는 자동으로 위의 레이어로 이동한다.
 
-```
+```ts
 // Generate Filter with Nest CLI
 nest g filter common/filters/http-exception
 
@@ -983,7 +983,7 @@ export class HttpExceptionFilter<T extends HttpException> implements ExceptionFi
 - authorization Header에 API_KEY가 존재하는지 확인하고,
 - 접근한 route가 public인지 확인해보자
 
-```jsx
+```ts
 // Generate ApiKeyGuard with Nest CLI
 nest g guard common/guards/api-key
 
@@ -1071,7 +1071,7 @@ export class ApiKeyGuard implements CanActivate {
 - 모든 response에 결과가 data property로 들어가길 원한다고 가정해보자.
 - rxjs : alternative to Promise or callbacks
 
-```
+```ts
 // Generate WrapResponseInterceptor with Nest CLI
 nest g interceptor common/interceptors/wrap-response
 
@@ -1103,7 +1103,7 @@ app.useGlobalInterceptors(new WrapResponseInterceptor());
 
 - another technique with interceptor
 
-```
+```ts
 /* Generate TimeoutInterceptor with Nest CLI */
 nest g interceptor common/interceptors/timeout
 
@@ -1158,7 +1158,7 @@ Pipes also receive the arguments meant to be passed on to the method. Any transf
 
 - Imcoming string을 Int로 바꾸는 파이프를 만들어보자
 
-```
+```ts
 // Generate ParseIntPipe with Nest CLI
 nest g pipe common/pipes/parse-int
 
@@ -1206,7 +1206,7 @@ Otherwise, the request will be left hanging - and never complete.
 - could be either function or class
 class : stateless, can not inject dependency
 
-```
+```ts
 // Generate LoggingMiddleware with Nest CLI
 nest g middleware common/middleware/logging
 
@@ -1236,7 +1236,7 @@ export class LoggingMiddleware implements NestMiddleware {
 
 - common.module.ts
 
-```
+```ts
 @Module({
   imports: [ConfigModule],
   providers: [{ provide: APP_GUARD, useClass: ApiKeyGuard }]
@@ -1254,7 +1254,7 @@ export class CommonModule implements NestModule {
 
 ## Create Custom Param Decorators
 
-```
+```ts
 // Using the Protocol decorator
 @Protocol(/* optional defaultValue */)
 
@@ -1288,7 +1288,7 @@ An OpenAPI document allows us to describe our entire API, including:
 - Authentication methods
 - Contact information, license, terms of use and other information.
 
-```
+```ts
 /**
  * Installing @nestjs/swagger
  * & Swagger UI for Express.js (which our application uses)
@@ -1329,7 +1329,7 @@ $ npm run test:e2e # for e2e tests
 
 ---
 
-```tsx
+```ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { CoffeesService } from './coffees.service';
 
