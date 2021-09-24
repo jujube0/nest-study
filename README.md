@@ -1,1079 +1,1785 @@
-# NESTJS
+# Nest 공부하기
 
-# Introudction
+Date: July 28, 2021 → July 28, 2021
+Tags: study
+link: https://docs.nestjs.com/first-steps
 
-- Node.js
+# 시작하기
 
-    minimize setups 
+`nest new {project-name}`
 
-    high flexibility 
+`nest g module user`
 
-- NEST.js
+- 같은 방식으로 user와 post의 module, controller, service 만들어주기
 
-    provides (scalable, testable, loosely-coubled ) architecture 
+> 또는 nest g resource [name] 를 이용하면 기본적인 CRUD가 존재하는 폴더가 생성된다.
 
-# Overview
+`$npm install --save @types/express` - type definition for express
 
-## Controller
+## controller
 
-- 요청 request 를 처리하고 응답 response를 클라이언트에 반환
+- receive specific requests for the application
+- routing
+- classes and decorators are used
 
-## Provider
+## Routing
 
-ex: service, repository, factory, helper...
-
-→ 종속적으로 **주입**이 가능한 클래스들
-
-→ 일반적으로 애플리케이션이 생성(bootstrap)되면 인스턴스화되었다가 어플리케이션이 종료될때 삭제된다. 
-
-→ `@Optional()` : dependencies which do not necessarily have to be resolved
-
-→ 주로 constructor를 통해 주입되는 constructor-based injection을 이용하지만, **property-based injection** 을 만들 수도 있다. 
-
-만약 상위 클래스가 여러 provider에 의존하는 경우, sub-class에서 모든 provider들을 전달하는 것보다는 property 수준에서 `@Inject()` decorator를 이용할 수 있다.
-
-→ Nest에 내장된 injection system을 이용하는 대신 
-
-기존 인스턴스를 가져오거나 프로바이더를 동적으로 인스턴스화할 수 있다. → **Module Reference**
-
-## Module
-
-→ `@module` 데코레이터를 통해 정의된다. 데코레이터는 Nest가 에플리케이션 구조를 구성하는데 사용하는 메타데이터를 제공한다.
-
-→ Nest는 root module에서 시작하여 **application grap**h라는 걸 만들게 된다. 이 application graph를 이용하여 nest는 module-provider relationship과 dependency들을 해결하게 된다. 
-
-→ `@module` 데코레이터는 하나의 single object를 인자로 받게된다. single object는 아래와 같은 property들을 갖게된다.
-
-- `providers` : Nest가 인스턴스화하여 모듈에서 공유될 provider
-- `controllers` : 해당 모듈에서 정의된 controller들. 역시 Nest가 인스턴스화한다.
-- `imports` : 본 모듈에서 필요로하는 provider들을 export하고 있는 모듈들의 리스트
-- `exports` : 본 모듈의 provider들 중 다른 모듈이 Import하여 이용할 provider들
-
-provider들은 module에 의해 캡슐화되기 때문에 `providers` property에 포함된 provider(모듈에 직접 포함된 provider)이거나 `imports` 를 통해 `export` 된 provider를 가져온 것들만 modue 내에서 이용이 가능하다.
-
-→ **Feature Module** : 특정 기능과 관련된 코드들을 하나의 모듈에 모아 관리할 수도 있다. 
-
-![NESTJS%20fbdd1ded1a7a43b2b6e44959e13c6f22/Untitled.png](NESTJS%20fbdd1ded1a7a43b2b6e44959e13c6f22/Untitled.png)
-
-cats.controller와 cats.service를 cats.module에 포함시키고, app.module.ts 파일에 한 번에 import해주는 방식
-
-→ **Module Re-exporting**
-
-```jsx
-@Module({
-  imports: [CommonModule],
-  exports: [CommonModule],
-})
-export class CoreModule {}
 ```
+import { Controller, Get } from '@nestjs/common';
 
-위처럼 모듈에서 자신이 import한 것을 다시 export하여서, 자신을 import하는 모듈들이 해당 provider들을 이용할 수 있도록 할 수도 있다.
-
-→ **Dependency Injection** 
-
-: 모듈의 constructor에서도 provider를 inject하여 이용할 수 있다(주로 configuration 목적).
-
-하지만 모듈이 provider처럼 inject될 수는 없는데, circular dependency가 되기 때문이다.
-
-→ **Global Module**
-
-: `@Global` 을 통해 모듈의 scope를 global로 확장시킬 수 있다. Global Module은 Root Module 또는 Core Module에 단 한번만 등록되면, 다른 모듈들에서는 import 없이 Global Module의 provider들을 이용할 수 있게된다.
-
-→ **Dynamic Module**
-
-: customized module, that can register and configure providers dynamically
-
-```jsx
-import { Module, DynamicModule } from '@nestjs/common';
-import { createDatabaseProviders } from './database.providers';
-import { Connection } from './connection.provider';
-
-@Module({
-  providers: [Connection],
-})
-export class DatabaseModule {
-  static forRoot(entities = [], options?): DynamicModule {
-    const providers = createDatabaseProviders(options, entities);
-    return {
-      module: DatabaseModule,
-      providers: providers,
-      exports: providers,
-    };
+@Controller('user')
+export class UserController {
+  @Get()
+  findAll(): string {
+    return 'returns all users';
   }
 }
+
 ```
 
-`forRoot()` 메서드를 통해 dynamic module을 리턴한다. 
+- `@Controller('user')` : `/user` 의 path prefix를 갖도록 한다.
+- `@Get()` : HTTP request method decorator,
+string을 argument로 넣어 `/user` 뒤에 올 route path를 추가할 수 있다.
+ex : `@Get('profile')` 을 접근하기 위해서는 `GET /user/profile` 로 접근한다.
 
-위에서 DatabaseModule은 기본적으로 `Connection` provider를 가지고 있으면서, `providers` 를 export하고 있다. 
+> Manipulating Responses
+built-in method를 통해 object나 array를 리턴하면 JSON으로 바꾸어 보내준다. status code는 200(POST는 201)이 자동으로 설정된다. @HttpCode(...) 데코레이터를 이용하여 변경할 수 있다.
 
-dynamic module에서 리턴한 property들은 `@Module` 데코레이터에서 정의된 기본 module metadata를 extend한다. 
+> Library-specific
+express 등의 라이브러리를 이용할 수 있다. method handler의 input으로 @Res 데코레이터를 넣어줄 수 있다(e.g., findAll(@Res() response)).
+전송은 response.status(200).send()
 
-이를 import하기 위해서는 다음과 같은 방식을 이용한다.
+## Request object
 
-```jsx
-import { Module } from '@nestjs/common';
-import { DatabaseModule } from './database/database.module';
-import { User } from './users/entities/user.entity';
+handler signature에 `@Req()`를 추가한다.
 
-@Module({
-  imports: [DatabaseModule.forRoot([User])],
-})
-export class AppModule {}
 ```
+import { Controller, Get, Req } from '@nestjs/common';
+import { Request } from 'express';
 
-## Middleware
-
-a function which is called before the route handler
-
-→ request object과 response object에 접근이 가능하다. 
-
-→ Nest middleware는 기본적으로 express와 동일하다.
-
-→ middle ware가 할 수 있는 것들?
-
-- make changes to the request and the response objects
-- end the request-response cycle
-- call the next middleware function in the stack
-- if the current middleware function does not end the request-response cycle, it must call `next` to pass control to the next middleware function. Otherwise, the request will be left hanging
-
-→ `@Injectable` 데코레이터를 이용하여 함수나 클래스에서 custom middleware를 구현할 수 있다.
-
-클래스에서 middleware를 구현하려면 `NestMiddleware` 인터페이스를 implement 해야한다.(함수는 상관 없음)
-
-```jsx
-import { Injectable, NestMiddleware } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
-
-@Injectable()
-export class LoggerMiddleware implements NestMiddleware {
-  use(req: Request, res: Response, next: NextFunction) {
-    console.log('Request...');
-    next();
+@Controller('user')
+export class UserController {
+  @Get()
+  findAll(@Req() request: Request): string {
+    console.log(request);
+    return 'returns all users';
   }
 }
+
 ```
 
-→ Dependency Injection
+```
+@Get()
+findAll(@Query() paginationQuery) {
+    const { limit, offset } = paginationQuery;
+    return `This action returns all coffees Limit: ${limit}, offset: ${offset}`;
+}
 
-: they are able to inject dependencies that are available within the same module(by constructor)
+```
 
-→ **Applying middleware**
+request object는 **request query string, parameter, HTTP headers, body property**를 가진다.
+`@Query(key?: string)`, `@Param(key?: string)`, `@Body(key?: string)` 등의 decorator로 property에 직접 접근도 가능하다.
 
-: `configure` method를 이용하여 모듈에서 middleware를 등록할 수 있다. middleware를 포함하는 모듈은 `NestModule` interface를 구현해야한다. 
+## HTTP Methods
 
-```jsx
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { LoggerMiddleware } from './common/middleware/logger.middleware';
-import { CatsModule } from './cats/cats.module';
+- `POST` 를 사용하는 방법은 다음과 같다.
 
-@Module({
-  imports: [CatsModule],
-})
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(LoggerMiddleware)
-      .forRoutes('cats');
+```
+import { Controller, Get, Post, Req } from '@nestjs/common';
+import { Request } from 'express';
+
+@Controller('user')
+export class UserController {
+  ...
+
+  @Post()
+  create(): string {
+    return 'This action adds a new user';
   }
 }
+
 ```
 
-```jsx
- .forRoutes({ path: 'cats', method: RequestMethod.GET }); // #1
- .forRoutes(CatsController);// #2
-consumer.apply(cors(), helmet(), logger).forRoutes(CatsController); // #3
+- 같은 방식으로 `@Get()`, `@Post()`, `@Put()`, 등의 HTTP Method를 이용할 수 있다.
+- `@All()` 은 모든 것들을 다루는 endpoint를 생성한다.
+
+## Status code
+
+```
+@Post()
+@HttpCode(204)
+create() {
+  return 'This action adds a new user';
+}
+
 ```
 
-`forRoutes` 에 `path`, `method` property를 가진 객체를 넣어 특정 메서드와 특정 path를 갖는 route에만 한정할 수도 있다. `forRoute` 에는 하나 이상의 string, 하나 이상의 controller class 들이 `,` 로 연결되어 들어갈 수 있다. 
+- `@nestjs/common` package
+- 만약 같은 request에 대해 http code가 다르다면 `@Res` 를 이용한 library-specific method를 이용하자.
 
-`apply` 에도 comma를 통해 여러개의 middlewarre를 연결할 수 있다.(#3)
+## Route parameters
 
-→ **Excluding routes**
+```
+@Get(':id')
+findOne(@Param() params): string {
+  console.log(params.id);
+  return `This action returns a #${params.id} user`;
+}
 
-: 제외할 수도 있다. 
-
-```jsx
-consumer
-  .apply(LoggerMiddleware)
-  .exclude(
-    { path: 'cats', method: RequestMethod.GET },
-    { path: 'cats', method: RequestMethod.POST },
-    'cats/(.*)',
-  )
-  .forRoutes(CatsController);
 ```
 
-→ **Functional Middleware**
+- 또는 직접 route parameter에 접근할 수도 있다.
 
-: dependency가 필요하지 않은 middleware를 만들때 유용하다. 
+```
+@Get('profile/:id')
+findProfile(@Param('id') id: string): string {
+  console.log(id);
+  return `This action returns a #${id} profile`;
+}
 
-```jsx
-import { Request, Response, NextFunction } from 'express';
-
-export function logger(req: Request, res: Response, next: NextFunction) {
-  console.log(`Request...`);
-  next();
-};
 ```
 
-```jsx
-consumer
-  .apply(logger)
-  .forRoutes(CatsController);
+## Asynchronicity
+
+```
+@Get()
+async findAll(): Promise<any[]> {
+  return [];
+}
+
 ```
 
-→ Global Middleware
+![https://images.velog.io/images/jujube0/post/72c6a223-3471-47a8-8264-ca1e9352c3ef/6A01367F-E8BE-47E8-9493-110DB3E50C75.png](https://images.velog.io/images/jujube0/post/72c6a223-3471-47a8-8264-ca1e9352c3ef/6A01367F-E8BE-47E8-9493-110DB3E50C75.png)
 
-: 모든 route에 적용되길 원한다면 main.ts 파일에서 적용이 가능하다. 
+## Request payloads/h
 
-```jsx
-const app = await NestFactory.create(AppModule);
-app.use(logger);
-await app.listen(3000);
+`@Body()` 데코레이터를 이용하여 POST route가 클라이언트가 보낸 request body를 읽을 수 있도록 만들어보자.
+
+- 일단 **DTO**(Data Transfer Object)를 만들어줘야 한다. 클래스나 인터페이스를 이용하여 만들 수 있는데, 클래스가 선호된다(클래스는 런타임에도 존재하지만 인터페이스는 제거됨).
+- cli `nest generate class coffees/dto/create-coffee.dto --no-spec`
+
+```
+export class CreatePostDto {
+  title: string;
+  content: string;
+}
+
 ```
 
-## Exception filters
+- 
 
-Nest에서는 개발자가 코드 내에서 처리하지 못한 exception에 대한 처리를 담당하는 **exception layer**가 존재한다. 
+```
+@Post()
+create(@Body() createPostDto: CreatePostDto): string {
+  return 'This action adds a new post';
+}
 
-이 작업은 `HttpException` 유형을 처리하는 global exception filter에 의해 수행되게 되고, exception이 `HttpException` 유형(또는 그 하위 유형)이 아닐 경우에는 
+```
 
-```jsx
+## Library-specific approach
+
+```
+import { Body, Controller, Get, HttpStatus, Post, Res } from '@nestjs/common';
+import { CreatePostDto } from './create-post.dto';
+import { Response } from 'express';
+
+@Controller('post')
+export class PostController {
+  // library specific approach
+  @Get()
+  findAll(@Res() res: Response) {
+    res.status(HttpStatus.CREATED).send();
+  }
+
+  @Post()
+  create(@Body() createPostDto: CreatePostDto, @Res() res: Response) {
+    res.status(HttpStatus.OK).json(createPostDto);
+  }
+}
+
+```
+
+- Library-specific approach 단점?
+    - 코드가 플랫폼에 의존성을 띄게 됨
+    - 테스트가 어려워짐(response object를 만들어줘야함)
+    - Nest standard response handling(`@HttpCode()`, `@Header()`, interceptors)을 이용할 수 없음 → 이를 고치기 위해서는 `@Res({ passthrough: true})` 를 추가해준다.
+
+# Providers
+
+- > it can inject dependency
+
+# Error
+
+nestjs/common을 이용하자.
+
+```
+const coffee =  this.coffees.find(item => item.id === +id);
+if (!coffee) {
+    throw new HttpException(`Coffee #${id} not found`, HttpStatus.NOT_FOUND);
+}
+return coffee;
+
+```
+
+- 또는
+
+```
+if (!coffee) {
+    throw new NotFoundException(`Coffee #${id} not found`);
+}
+
+```
+
+# Validation Pipe
+
+```
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidationPipe());
+  await app.listen(3000);
+}
+
+```
+
+두번쨰줄 추가하기
+
+`npm i class-validator class-transformer`
+
+```
+import { IsString } from "class-validator";
+
+export class CreateCoffeeDto {
+    @IsString()
+    readonly name: string;
+
+    @IsString()
+    readonly brand: string;
+
+    @IsString({ each: true })
+    readonly flavors: string[];
+}
+
+```
+
+정상적인 Request body를 보내지 않으면 다음과 같은 json을 리턴한다.
+
+```
 {
-	"statusCode": 500,
-	"message": "Internal server error"
-} 
-```
-
-위의 JSON response를 보내게 된다.
-
-### Throwing standard exceptions
-
-```jsx
-@Get()
-async findAll() {
-  throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+  "statusCode": 400,
+  "message": [
+    "name must be a string",
+    "each value in flavors must be a string"
+  ],
+  "error": "Bad Request"
 }
+
 ```
 
-기본적으로 HttpException은 
+`npm i @nestjs/mapped-types`
 
-- JSON 응답 본문을 정의하는 `response`(string or object)
-- HTTP status code `status` (number) → HttpStatus(from `@nestjs/common`) enum을 사용하면 좋다.
+```
+import { PartialType } from "@nestjs/mapped-types";
+import { CreateCoffeeDto } from "./create-coffee.dto";
 
-의 두 가지 인수를 필요로한다.
+export class UpdateCoffeeDto extends PartialType(CreateCoffeeDto){ }
 
-`response` 로 object를 넣으면 해당 object가 그대로 return 된다. 
+```
 
-else, `{"statusCode": status, "message": response}` 형태
+# Docker
 
-### Exception filters
+- docker-compose.yml
 
-위에서 설명한 built-in exception filter들을 이용하는 대신, exception을 직접 조작하고 싶을 수도 있다.
+```
+version: "3"
+services:
+  db:
+    image:  postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+       POSTGRES_PASSWORD: pass123
 
-예를 들어
+```
 
-- 로깅을 추가하거나
-- 경우에 따라 다른 JSON schema를 쓰고 싶어질 수도 있다.
+// Start containers in detached / background mode
+`docker-compose up -d`
 
-→ `**HttpException` 클래스의 인스턴스를 캐치하는 exception filter를 만들어보자!**
+// Stop containers
+`docker-compose down`
 
-이를 위해서는 일단 `Request`, `Response` 객체가 필요하다.
+# Transaction
 
-- Request : original `url` 을 loggin에 포함시키기 위해서
-- Response : `response.json()` 메서드를 이용하여 응답 전송을 직접 제어하기 위해서
+event.entity.ts
 
-```jsx
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
-import { Request, Response } from 'express';
+```
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-@Catch(HttpException)
-export class HttpExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
-    const status = exception.getStatus();
+@Entity()
+export class Event {
+    @PrimaryGeneratedColumn()
+    id: number;
 
-    response
-      .status(status)
-      .json({
-        statusCode: status,
-        timestamp: new Date().toISOString(),
-        path: request.url,
-      });
+    @Column()
+    type: string;
+
+    @Column()
+    name: string;
+
+    @Column('json')
+    payload: Record<string, any>;
+}
+
+```
+
+- coffees.service.ts
+
+```
+@Injectable()
+export class CoffeesService {
+  constructor(
+    ...
+    private readonly connection: Connection,
+  ) {}
+
+  ...
+  async recommendCoffee(coffee: Coffee) {
+    const queryRunner = this.connection.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      coffee.recommendations++;
+
+      const recommendEvent = new Event();
+      recommendEvent.name = 'recommend_coffee';
+      recommendEvent.type = 'coffee';
+      recommendEvent.payload = { coffeeId: coffee.id };
+
+      await queryRunner.manager.save(coffee);
+      await queryRunner.manager.save(recommendEvent);
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
+    }
   }
 }
+
 ```
 
-→ `@Catch(HttpException)` exception filter와 필요한 metadata를 연결해준다. 
+# Migration
 
-comma로 연결된 list를 인자로 넣을 수도 있다.
+ormconfig.js 파일 만든 후,
+shell에서
+`npx typeorm migration:create -n CoffeeRefactor`
 
-→ `catch()` 의 매개변수들을 살펴보자
+- > src/migration 에 migration file을 만들어줌
 
-`exception` 은 현재 처리 중인 예외객체이고
+![https://images.velog.io/images/jujube0/post/6ad6f5d3-b6f8-49f0-9e3c-0f0ac58b5c64/AC7D3276-D3B4-4DA9-9183-35D35E4CE90D.png](https://images.velog.io/images/jujube0/post/6ad6f5d3-b6f8-49f0-9e3c-0f0ac58b5c64/AC7D3276-D3B4-4DA9-9183-35D35E4CE90D.png)
 
-`host` 는 `ArgumentsHost` 객체이다. 여기에서는 request와 response에 접근하기 위해 이용하고 있다.
+> coffee entity의 name 칼럼을 title 로 바꾸는 상황을 가정해보자.
+단순히 name을 title로 바꿔버린다면, name에 있던 데이터들은 모두 날아가버릴 것이다.
 
-→ **Binding filters**
+migrations file을 바꿔준다.
 
-위에서 작성한 `HttpExceptionFilter` 를 `catsController` 의 create함수와 연결해보자!
+```
+import {MigrationInterface, QueryRunner} from "typeorm";
 
-```jsx
-@Post()
-@UseFilters(new HttpExceptionFilter())
-async create(@Body() createCatDto: CreateCatDto) {
-  throw new ForbiddenException();
+export class CoffeeRefactor1626325978666 implements MigrationInterface {
+
+    public async up(queryRunner: QueryRunner): Promise<void> { // what needs to be changed and how
+        await queryRunner.query(
+            `ALTER TABLE "coffee" RENAME COLUMN "name" TO "title"`
+        )
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> { // undo or roll back
+        await queryRunner.query(
+            `ALTER TABLE "coffee" RENAME COLUMN "title" TO "name"`
+        )
+    }
+
 }
+
 ```
 
-- `UseFilters` 는 `@nestjs/common` package에서 가져온다
+`num run buildnpx typeorm migration:run`
+(`npx typeorm migration:revert`)
 
-    → 하나 이상의 filter instance를 인자로 받는다(by commas). Instance를 넣는 대신 class를 넣을 수도 있는데 이 경우 framework가 instantiation을 맡게되고, DI 가 가능해진다. 또한 이 경우 Nest가 instance를 재활용하기가 쉬워져 메모리 사용량이 적어지게 된다 
+typeorm은 db의 entity와 현재 entity 파일을 비교하여 직접 migration 파일을 만들게 할 수도 있다.
 
-    **되도록 클래스를 이용하도록 하자**
+`npm run buildnpx typeorm migration:generate -n SchemaSyncnpx typeorm migration:run`
 
-- 위 예제에서는 exception filter가 method-scope로 쓰였다. 이 외에도 controller-scope, global-scope가 모두 가능하다
-- global-scope로 쓰기 위해서는 main.ts 파일에서
+# Dependency Injection
 
-    `app.useGlobalFilters(new HttpExceptionFilter())` 를 추가해주면 된다.
+- technique where we delegated instantiation of dependency, to an "inversion of control"(IpC) container (Nestjs runtime system)
 
-    이 경우, 모든 모듈 context의 외부에서 진행되는 것이기에 dependency를 주입할 수 없다.
+    ![https://images.velog.io/images/jujube0/post/22323d03-fae7-459f-9d87-681ab26b7b7c/749F6065-1F6B-477F-BFF0-0FA9660A85D2.png](https://images.velog.io/images/jujube0/post/22323d03-fae7-459f-9d87-681ab26b7b7c/749F6065-1F6B-477F-BFF0-0FA9660A85D2.png)
 
-    해결하기 위해서는, `app.module.ts` 파일에서 filter를 추가하는 방법이 있다.
+## CoffeeService를 참조(dependent)하는 CoffeeRatingService를 만들어보자
 
-## Pipes
+- coffees.module.ts에서 `CoffeesService` export
 
-`@Injectable()` 데코레이터로 정의된다. `PipeTransform` 을 구현(implement)해야한다.
+```
+@Module({
+    ...
+    exports: [CoffeesService],
+})
 
-주로 두가지의 상황에서 사용된다.
-
-- **transformation**: input data를 조작
-- **validation**: input data가 valid한지 확인하여 valid하지 않은 경우에는 예외를 던진다.
-
-두 가지 상황 모두 controller route handler 가 처리하는 **argument** 에 대한 조작이다.
-
-→ 주로 함수가 시작되기 바로 전에 pipe가 실행되어 함수의 argument들에 대한 선처리를 해주는 역할
-
-→ pipe도 exception zone 안에서 작동한다. == pipe가 예외를 던지면 exception layer에 의해 catch되며, 이어지는 controller 메서드는 작동하지 않는다는 것을 기억하자. 
-
-### Built-in pipes
-
-- `ValidationPipe` (현재 모두싸인에서 이용중)
-- `ParseIntPipe`
-- etc
-
-→ **ParseIntPipe** 를 예시로 살펴보자. 이 친구는 위에서 언급한 두 가지 상황 중 **transformation** 용도로 이용되어 메서드의 parameter를 integer로 파싱하고, 파싱할 수 없는 경우 exception을 발생시킨다.
-
-```jsx
-@Get(':id')
-async findOne(@Param('id', ParseIntPipe) id: number) {
-  return this.catsService.findOne(id);
-}
 ```
 
-method parameter level에서 pipe를 적용시킨 예제이다.
+- coffee-rating.module.ts에서 `CoffeesModule` import
 
-위 예제에서는 class를 전달시켜 DI를 활성화했다. 인스턴스를 전달할 수도 있는데, 주로 option을 추가하여 pipe의 행동을 변화시키고 싶을 때 이용한다.
+```
+import { Module } from '@nestjs/common';
+import { CoffeesModule } from 'src/coffees/coffees.module';
+import { CoffeeRatingService } from './coffee-rating.service';
 
-```jsx
-@Get(':id')
-async findOne(
-  @Param('id', new ParseIntPipe({ errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE }))
-  id: number,
-) {
-  return this.catsService.findOne(id);
-}
+@Module({
+  imports: [CoffeesModule],
+  providers: [CoffeeRatingService]
+})
+export class CoffeeRatingModule {}
+
 ```
 
-### Custom Pipe
+- coffee-rating.service.ts에서 `CoffeesService` import
 
-```tsx
-
-import { PipeTransform, Injectable, ArgumentMetadata } from '@nestjs/common';
+```
+import { Injectable } from '@nestjs/common';
+import { CoffeesService } from 'src/coffees/coffees.service';
 
 @Injectable()
-export class ValidationPipe implements PipeTransform {
-  transform(value: any, metadata: ArgumentMetadata) {
-    return value;
-  }
-}
-```
-
-→ 위 예제는 단순하게 input을 받아 리턴하는 커스텀 파이프이다.
-
-→ `PipeTransform<T, R>` 는 generic interface이다. `T` 는 input `value` 의 타입을, `R` 은 `transform` 메서드의 리턴 타입을 명시한다.
-
-→ `transform` 함수는 `PipeTransform` 을 구현하기 위한 필수 요소이다. 두 가지의 parameter를 가지게 된다.
-
-- `value` : currently processed method argument
-- `metadata` : value의 메타데이터이다. 아래 속성들을 가진다.
-
-    ```tsx
-    export interface ArgumentMetadata {
-      type: 'body' | 'query' | 'param' | 'custom';
-      metatype?: Type<unknown>;
-      data?: string;
-    }
-    ```
-
-### Schema based validation
-
-- `Joi` 라이버리를 통해 API를 통해 손쉽게 스키마를 만들 수가 있다. Joi-based schema를 만들어보자
-
-```tsx
-$ npm install --save joi
-$ npm install --save-dev @types/joi
-```
-
-```tsx
-import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
-import { ObjectSchema } from 'joi';
-
-@Injectable()
-export class JoiValidationPipe implements PipeTransform {
-  constructor(private schema: ObjectSchema) {}
-
-  transform(value: any, metadata: ArgumentMetadata) {
-    const { error } = this.schema.validate(value);
-    if (error) {
-      throw new BadRequestException('Validation failed');
-    }
-    return value;
-  }
-}
-```
-
-→ schema를 constructor의 인수로 받아 `schema.validate()` 를 통해 유효성을 검증한다.
-
-→ validation pipe이므로 값을 변경하지 않고 그대로 반환하거나, 예외를 던진다.
-
-```tsx
-@Post()
-@UsePipes(new JoiValidationPipe(createCatSchema))
-async create(@Body() createCatDto: CreateCatDto) {
-  this.catsService.create(createCatDto);
-}
-```
-
-### Class Validator
-
-- decorator 기반의 validation
-- processed data의 metadata에 접근할 수 있기 때문에 Pipe와 함께 적용할 때 효과적이다
-- Typescript를 이용할때에만 적용할 수 있다.
-
-```bash
-$ npm i --save class-validator class-transformer
-```
-
-```tsx
-import { IsString, IsInt } from 'class-validator';
-
-export class CreateCatDto {
-  @IsString()
-  name: string;
-
-  @IsInt()
-  age: number;
-
-  @IsString()
-  breed: string;
-}
-```
-
-[GitHub - typestack/class-validator: Decorator-based property validation for classes.](https://github.com/typestack/class-validator#usage)
-
-- custom validation을 생성할 수 있지만 Nest의 built-in을 사용할 수도 있다.
-- 모두사인에서도 built-in을 이용하고 있다.
-
-```tsx
-// validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      disableErrorMessages: false,
-      whitelist: false,
-      transform: true,
-      validationError: {
-        target: false,
-        value: false,
-      },
-      exceptionFactory: errors => new ValidationFailedException(errors),
-    }),
-  );
-```
-
-- 모두싸인에서 이용중인 validation pipe, `@nestjs/common` package에서 가져온다.
-
-→ `disableErrorMessages` : if set to true, validation errors will not be returned to the client
-
-→ `whitelist`: if set to true, validator will strip validated(returned) object of any properties that do not use any validation decorators
-
-*whitelist는 바람직한 것들의 리스트를 의미한다. 
-
-→ `transform`: payload를 지정된 타입으로 자동변환한다.
-
-→ `validationError.target` : `ValidationError` 에서 대상을 노출해야하는지의 여부
-
-→ `validationError.value` : 검증된 값이 `ValidationError` 에 노출되어야하는지의 여부
-
-TS는 generic이나 interface의 metadata를 저장하지 않기 때문에, DTO에서 이들을 이용할 경우 `validationPipe` 가 제대로 작동하지 않을 수 있다. 
-
-예를 들어, array는 generic을 이용하기 때문에 array를 Input으로 받는 경우 validation이 잘 되지 않는다. → `ParseArrayPipe` 를 이용해보자.
-
-```tsx
-@Post()
-createBulk(
-  @Body(new ParseArrayPipe({ items: CreateUserDto }))
-  createUserDtos: CreateUserDto[],
-) {
-  return 'This action adds new users';
-}
-```
-
-```tsx
-@Get()
-findByIds(
-  @Query('ids', new ParseArrayPipe({ items: Number, separator: ',' }))
-  ids: number[],
-) {
-  return 'This action returns users by ids';
-}
-```
-
-`ParseArrayPipe` 는 위처럼 query parameter를 파싱할 때도 유용하게 이용할 수 있다. 
-
-custom pipe가 validation 뿐만 아니라 transformation의 역할도 수행가능함을 기억하자. id를 받아 User entity를 가져오는 것도 pipe를 이용할 수 있다.
-
----
-
-## Guard
-
-- 역시 `Injectable` 데코레이터 주석을 갖는다.
-- Guard는 `CanActivate` 인터페이스를 구현(implement)해야한다.
-- Guard는 런타임에 주어진 특정 조건들(permission, role...)에 따라서 주어진 request가 route handler에 의해 처리될 지의 여부를 결정해준다.
-- authorization이라고 불리기도 한다.
-    - authorization은 전통적인 express 앱에서는 middleware로 다뤄졌죵?
-    - middleware와의 차이점은, middleware는 다음으로 호출될 route handler에 대한 정보를 알지 못하는 반면, **Guard** 는 `ExecutionContext` 인스턴스를 통해 handler에 대한 정보를 알 수 있다는 데에 있다!
-- middleware 이후에, 하지만 interceptor나 pipe 이전에 동작한다.
-
-```jsx
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Observable } from 'rxjs';
-
-@Injectable()
-export class AuthGuard implements CanActivate {
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
-    const request = context.switchToHttp().getRequest();
-    return validateRequest(request);
-  }
-}
-```
-
-- 모든 guard는 `canActivate()` 함수를 구현한다. `true` 를 반환하면 요청이 처리되고, `false` 를 반환하면 요청을 거부한다.
-
-→ 어떻게 이용할까?
-
-역시 controller-scoped, method-scoped, global-scoped 중 하나가 될 수 있다.
-
-controller, method-scoped로 이용하기 위해서는 `@UseGuard()` 데코레이터를 이용한다. 
-
-global-scope로 이용하기 위해서는 `app.useGlobalGuard()` 메서드를 이용한다. 
-
-**Authorization Guard**에 대해 고민해보자. 특정 route는 모든 user가 이용할 수 있지만, admin만 이용 가능한 route도 존재할 것이다. 
-
-custom metadata를 이용하여 role과 route를 연결할 수 있다.
-
-```jsx
-// roles.decorator.ts
-import { SetMetadata } from '@nestjs/common';
-
-export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
-
-// cats.controller.ts
-@Post()
-@Roles('admin')
-async create(@Body() createCatDto: CreateCatDto) {
-  this.catsService.create(createCatDto);
-}
-```
-
-```jsx
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-
-@Injectable()
-export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
-
-  canActivate(context: ExecutionContext): boolean {
-    const roles = this.reflector.get<string[]>('roles', context.getHandler());
-    if (!roles) {
-      return true;
-    }
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
-    return matchRoles(roles, user.roles);
-  }
-}
-```
-
-`canActivate()` 함수가 `false` 를 리턴하면 `ForbiddenException` 이 던져진다. 
-
-## Interceptors
-
-`@Injectable()` 데코레이터 주석이 필요하며, `NestInterceptor` 인터페이스를 구현해야한다.
-
-인터셉터의 역할
-
-- bind extra logic before/after method execution
-- transform the result returned from a function
-- transform the exception thrown from a function
-- extend the basic function behavior
-- completely override a function depending on specific condition
-
-인터셉터는 `intercept()` 메서드를 구현해야하는데, 두 개의 인자를 가진다. 첫번째는 `ExecutionContext` 이고, 두 번째는 `CallHandler` 인터페이스이다. 
-
-`CallHandler` 는 `handle()` 메서드를 구현해야하는데, handle() 메서드는 route handler를 작동시키게 된다. → `handle()` 메서드가 `intercept()` 에서 호출되지 않으면 route handler는 작동을 하지 않게 된다
-
-추가로 `handle()` 메서드는 Observable 객체를 리턴하게 되기 때문에 route handler가 작동한 후 인터셉터는 response에 대한 조작도 가능하다.
-
-```tsx
-// logging.interceptor.ts
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
-
-@Injectable()
-export class LoggingInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    console.log('Before...');
-
-    const now = Date.now();
-    return next
-      .handle()
-      .pipe(
-        tap(() => console.log(`After... ${Date.now() - now}ms`)),
-      );
-  }
+export class CoffeeRatingService {
+    constructor(private readonly coffeeService: CoffeesService) {}
 }
 
-// cats.controller.ts
-@UseInterceptors(LoggingInterceptor)
-export class CatsController {}
 ```
 
-→ `@nestjs/common` package의 `@UseInterceptors()` 데코레이터를 이용한다. 
-
-역시 controller/class/method-scoped가 모두 가능하다
-
-- **Response mapping**
-
-    → library0specific response strategy(`@Res` 를 이용하는 것)에는 이용할 수 없다.
-
-    ```tsx
-    //transform.interceptor.ts
-
-    import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
-    import { Observable } from 'rxjs';
-    import { map } from 'rxjs/operators';
-
-    export interface Response<T> {
-      data: T;
-    }
-
-    @Injectable()
-    export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
-      intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
-        return next.handle().pipe(map(data => ({ data })));
-      }
-    }
-    ```
-
-- **Exception mapping**
-
-    → RxJS의 `catchError()` 연산자를 사용하여 던져진 예외를 재정의할 수도 있다.
-
-    ```tsx
-    import {
-      Injectable,
-      NestInterceptor,
-      ExecutionContext,
-      BadGatewayException,
-      CallHandler,
-    } from '@nestjs/common';
-    import { Observable, throwError } from 'rxjs';
-    import { catchError } from 'rxjs/operators';
-
-    @Injectable()
-    export class ErrorsInterceptor implements NestInterceptor {
-      intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-        return next
-          .handle()
-          .pipe(
-            catchError(err => throwError(new BadGatewayException())),
-          );
-      }
-    }
-    ```
-
-- **Stream overriding**
-
-→ handler를 호출하는 대신 다른 값을 리턴할 수도 있다. 한 예시가 캐시!
-
-```tsx
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
-import { Observable, of } from 'rxjs';
-
-@Injectable()
-export class CacheInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const isCached = true;
-    if (isCached) {
-      return of([]);
-    }
-    return next.handle();
-  }
-}
-```
-
-## Custom route decorators
-
-An ES2916 decorator is an expression which returns a function and can take a target, name and property descriptor as arguments. You apply it by prefixing the decorator with an `@` character and placing this at the very top of what you are trying to decorate. Decorators can be defined for either a class, a method or a property
-
-- **Param Decorator**
-
-    → attach properties to the request object
-
-    ```tsx
-    // user.decorator.ts
-    import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-
-    export const User = createParamDecorator(
-      (data: unknown, ctx: ExecutionContext) => {
-        const request = ctx.switchToHttp().getRequest();
-        return request.user;
-      },
-    );
-
-    // usage
-    @Get()
-    async findOne(@User() user: UserEntity) {
-      console.log(user);
-    }
-    ```
-
-→ Passing data
-
-```tsx
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-
-export const User = createParamDecorator(
-  (data: string, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    const user = request.user;
-
-    return data ? user?.[data] : user;
-  },
-);
-// usage
-@Get()
-async findOne(@User('firstName') firstName: string) {
-  console.log(`Hello ${firstName}`);
-}
-```
-
-# Fundamentals
+모든 module은 provider들을 encapsulate한다 → 다른 module에서 이를 이용하려면 `exported` 에 직접 명시해주어 API에 포함시켜줘야한다.
 
 ## Custom Providers
 
-Dependency Injection 는 Ioc Container(Nest 런타임)에 dependency의 instantiation을 위임히난, **inversion of control** 기술이다.
+좀 더 복잡한 provider를 이용할 때를 생각해보자.
 
-- catsService가 적용되는 과정
-    1. `cats.service.ts` 파일에서 `@Injectable()` 데코레이터를 통해 Nest IoC 컨테이너가 관리할 수 있도록 `CatsService` 를 정의한다. 
-    2. `CatsController` 는 constructor injection을 통해 `CatsService` 토큰에 대한 종속성을 선언한다.
-    3. `app.module.ts` 에서 `CatsService` 토큰과 `CatsService` 클래스를 연결시킨다. 
-        1. controller의 dependencies들을 찾는다.
-        2. `CatsService` dependency를 찾으면, token을 통해 클래스를 가져온다.
-        3. 새롭게 생성하거나, 이미 존재하는 `CatsService` 인스턴스를 리턴한다. 
+- Creating a custom instance of our provider instead of having Nest instatiate that class for us
+- want to reuse an existing class in a second dependency
+- want to overwrite a class with a mock version for testing
+- want to use a strategy pattern in which we can provide an abstract class
 
-원래 모듈에서 `providers: [CatsService]` 로 표현되는 구문은 아래 구문의 shorthand이다. 
+### Value based provider
 
-```tsx
-providers: [
-  {
-    provide: CatsService,
-    useClass: CatsService,
-  },
-];
+```
+@Module({
+    imports: [TypeOrmModule.forFeature([Coffee, Flavor, Event])],
+    controllers: [CoffeesController],
+    providers: [{ provide : CoffeesService, useValue: CoffeesService}],
+    exports: [CoffeesService],
+})
+
 ```
 
-- **Value providers: `useValue`**
-    - constant value / external library를 넣거나, 실제 구현항목을 mock으로 대체할 때 유용하다.
-- **Non-class-based provider tokens**
-    - 위에서는 클래스 이름을 바로 provider token으로 이용했는데, string이나 symbol을 대신 이용할 수도 있다.
+실제 provider 구조는 다음과 같다. 우리가 쓰는 것은 shorthand
 
-        ```tsx
-        import { connection } from './connection';
+그래서
 
-        @Module({
-          providers: [
-            {
-              provide: 'CONNECTION',
-              useValue: connection,
-            },
-          ],
-        })
-        export class AppModule {}
+```
+class MockCoffeeService {}
 
-        // cats.repository.ts
-        @Injectable()
-        export class CatsRepository {
-          constructor(@Inject('CONNECTION') connection: Connection) {}
+@Module({
+    imports: [TypeOrmModule.forFeature([Coffee, Flavor, Event])],
+    controllers: [CoffeesController],
+    providers: [{ provide : CoffeesService, useValue: new MockCoffeeService()}],
+    exports: [CoffeesService],
+})
+export class CoffeesModule {}
+
+```
+
+이렇게 이용할 수 있다는 말.
+
+### Non-class-based Provider Token
+
+- coffees.module.ts
+
+```
+@Module({
+    ...
+    providers: [CoffeesService, { provide: 'COFFEE_BRANDS', useValue: ['buddy brew', 'nescafe']}],
+})
+
+```
+
+이용할 때에는
+
+```
+@Injectable()
+export class CoffeesService {
+  constructor(
+    ...
+    @Inject('COFFEE_BRANDS') coffeeBrands: string[],
+  ) {}
+
+```
+
+`@Inject()` 데코레이터 안에 TOKEN을 넣으면 된다.
+typo 오류 등을 방지하기 위해서 TOKEN들을 다른 파일에 저장해 놓는 것이 좋다.
+
+### Class Provider
+
+- "useClass" syntax
+
+```
+ providers: [
+        CoffeesService,
+        {
+            provide: ConfigService,
+            useClass: process.env.NODE_ENV === 'development' ? DevelopmentConfigService: ProductionConfigService
         }
-        ```
+    ],
 
-        이용시에는 `@Inject()` 데코레이터에 토큰 값을 넣어주면 된다.
-
-- **Class providers**: `useClass`
-    - 토큰과 연결할 클래스를 dynamic하게 지정할 수 있다.
-
-    ```tsx
-    const configServiceProvider = {
-      provide: ConfigService,
-      useClass:
-        process.env.NODE_ENV === 'development'
-          ? DevelopmentConfigService
-          : ProductionConfigService,
-    };
-
-    @Module({
-      providers: [configServiceProvider],
-    })
-    export class AppModule {}
-    ```
-
-- **Factory providers**: `useFactory`
-    - provider를 동적으로 생성할 수 있다.
-    - factory function가 리턴한 값이 provider가 된다.
-
-    ```tsx
-    const connectionFactory = {
-      provide: 'CONNECTION',
-      useFactory: (optionsProvider: OptionsProvider) => {
-        const options = optionsProvider.get();
-        return new DatabaseConnection(options);
-      },
-      inject: [OptionsProvider],
-    };
-
-    @Module({
-      providers: [connectionFactory],
-    })
-    export class AppModule {}
-    ```
-
-    - `inject` 프로퍼티를 통해 factory function의 parameter로 전달할 provider의 리스트를 설정할 수 있다.
-    - `inject` 프로퍼티의 provider 리스트와 factory function의 argument는 같은 순서로 정렬되어야한다.
-
-- **Alias providers**: `useExisting`
-    - 이미 존재하는 provider의 별칭을 설정할 수 있다.
-
-- **Non-service based providers**
-    - Provider는 어떤 값이든 될 수 있다.
-
-- **Exporting**
-
-    token이나 full provider object를 이용할 수 있다. 
-
-## Dynamic module
-
-- static module binding → all the information Nest needs to wire together the modules has already been declared in the host and consuming modules
-- importing Dynamic module, consuming module can influence(customize) how providers from the host module are configured
-- ex : **configuration module**
-
-## Injection scopes
-
-- in Nest, almost everything is shared across incoming requests.
-
-`DEFAULT`(default): 하나의 인스턴스가 전체 어플리케이션에서 공유된다. 
-→ 인스턴스의 생명주기는 앱의 생명주기와 동일하며, 어플리케이션이 bootstrap될 때 모든 singleton instance가 초기화된다.
-
-`REQUEST`: request마다 하나의 인스턴스가 생성된다. request가 종료되면 생성된 인스턴스는 garbage-collected된다.
-
-`TRANSIENT`: consumer간 절대 공유되지 않는다. 각 consumer는 새로운 instance를 갖게 된다.
-
-```tsx
-import { Injectable, Scope } from '@nestjs/common';
-
-@Injectable({ scope: Scope.REQUEST })
-export class CatsService {}
 ```
 
-- 하위 계층의 scope는 상위 계층에 반영된다.(scope hierarchy)
-- 
+### Factory Provider
 
-## Circular Dependency
+- "useFactory" syntax
+- can inject other providers needed to compute the returning result
 
-- A circular dependency occurs when two classes depend on each other
-- Nest에서는 모듈간 또는 provider간에 이러한 circular dependency가 나타날 수 있다.
-- 
+```
 
-## Promise vs Observable
+@Module({
+    imports: [TypeOrmModule.forFeature([Coffee, Flavor, Event])],
+    controllers: [CoffeesController],
+    providers: [
+        CoffeesService,
+        CoffeeBrandsFactory,
+        {
+            provide: COFFEE_BRANDS,
+            useFactory: (brandsFactory: CoffeeBrandsFactory) => brandsFactory.create(),
+            inject: [CoffeeBrandsFactory]
+        }
+    ],
+    exports: [CoffeesService],
+})
 
-- `Promise` → handles a **single event** when an async operation completes or fails
-- `Observable`
+```
 
-    → allows to pass zero or more events where the callback is called for each event
+### Leverage Async Provider
 
-    → cancellable(promise의 경우 success/fail callback 중 하나를 꼭 불러낸다)
+```
+// Asynchronous "useFactory" (async provider example)
+{
+  provide: 'COFFEE_BRANDS',
+  // Note "async" here, and Promise/Async event inside the Factory function
+  // Could be a database connection / API call / etc
+  // In our case we're just "mocking" this type of event with a Promise
+  useFactory: async (connection: Connection): Promise<string[]> => {
+    // const coffeeBrands = await connection.query('SELECT * ...');
+    const coffeeBrands = await Promise.resolve(['buddy brew', 'nescafe'])
+    return coffeeBrands;
+  },
+  inject: [Connection],
+},
 
-    → `retry()`, `replay()` 등의 함수를 가짐
+```
 
-## Module reference
+해당 provider에 의존하는 클래스를 instantiate하기 전에 위 promise를 먼저 resolve하게 된다.
 
-- `ModuleRef` class to navigate the internal list of providers and obtain a reference using injection token.
-- way to dynamically instantiate both static and scoped providers
+### Create a Dynamic Module
 
-```tsx
-@Injectable()
-export class CatsService {
-  constructor(private moduleRef: ModuleRef) {}
+위에서 다룬 모듈들은 static module이었다.
+static modules can't have their providers be configured by a module that is consuming it
+
+```
+// Generate a DatabaseModule
+nest g mo database
+
+// Initial attempt at creating "CONNECTION" provider, and utilizing useValue for values */
+{
+  provide: 'CONNECTION',
+  useValue: createConnection({
+    type: 'postgres',
+    host: 'localhost',
+    port: 5432
+  }),
 }
-```
 
-- `get` 메서드를 통해 현재 모듈의 provider, controller, injectable 들을 가져올 수 있다. 단 transient or request-scoped provider에는 접근할 수 있다.
-
-## Lazy-loading modules
-
-- default → eagerly loading(앱이 시작되자마자 모듈들도 생성됨)
-- lazy loading
-
-    : 서버리스 환경같은 특수한 환경에서는 앱이 빠르게 시작되는 것이 중요하다.
-
-    필요한 module만 그때그때 로드하여 bootstrap시간을 줄인다.
-
-## Lifecycle Events
-
-- 
-
-## Dependency Injection
-
-- 종속적 주입,
-- dependencies are services or ojects taht a class need to perform its function
-
-    DI is a design pattern in which a class requests dependencies from external sources rather than creating them
-
-- CQRS 커맨드 쿼리 책임 분리
-
-    event publish - subscribe 
-
-    → user에 대한 정보를 유지하기 위해 새로 bus를 만든 것
-
-- event driven
-
-    Listener 
-
-## Execution context
-
-여러 application context → (Http, Microservice, websocket...) 
-
-현재 실행 컨텍스트에 대한 정보를 얻기 위한 방법
-
-두 가지 클래스 `ArgumentsHost` 와 `ExecutionContext` 가 있다.
-
-1. **ArgumentsHost**
-
-    : 핸들러에 전달되는 인수를 검색하는 메서드를 제공한다. 인수를 검색할 적절한 context(htt, RPC...)를 선택할 수 있다.
-
-    일반적으로 인스턴스는 `host` 매개변수로 참조된다. 
-
-    핸들러 인수들(http 애플리케이션의 경우 `[request, response, next]` 배열)을 캡슐화함. 
-
-    ```jsx
-    const [req, res, next] = host.getArgs();
-    ```
-
-    이렇게 바로 접근이 가능하긴 한데, 실행 context에 따라 `getArgs` 의 리턴값도 달라지게 되므로
-
-    ```jsx
-    const ctx = host.switchToHttp();
-    const request = ctx.getRequest<Request>();
-    const response = ctx.getResponse<Response>();
-    ```
-
-    컨텍스트로 전환을 먼저 시키는 방법을 쓰는 것이 안전하다.
-
-2. **ExecutionContext**
-
-: extends `ArgumentsHost` 
-
-현재 실행 프로세스에 대한 추가 정보를 제공한다. 
-
-`getHandler()` 메서드를 통해 호출될 핸들러의 참조를 반환할 수 있으며, `getClass()` 메서드를 통해 이 특정 핸들러가 속한 `Controller` 클래스의 유형을 반환할 수 있다.
-
-→ Guard 또는 Interceptor에서 핸들러 클래스와 메서드의 metadata에 접근하는데에 이용될 수 있다.
-
-→ `SetMetadata()` 를 통해 라우트 핸들러 또는 클래스에 커스텀 메타데이터를 추가할 수 있있으며, 이러한 metadata에 접근하기 위해서는 **Reflector** 헬퍼 클래스를 사용한다.(from `@nestjs/core`) 
-
-```jsx
-@Injectable()
-export class RolesGuard {
-  constructor(private reflector: Reflector) {}
+// Creating static register() method on DatabaseModule
+export class DatabaseModule {
+  static register(options: ConnectionOptions): DynamicModule {  }
 }
-```
 
-→ 메타데이터를 읽기 위해서는
-
-```jsx
-const roles = this.reflector.get<string[]>('roles', context.getHandler());
-```
-
-```jsx
-const internalApiGuard: InternalApiGuard = new InternalApiGuard(app.get(Reflector));
-internalApiGuard.setApiKey(appConfig.serviceApiKey);
-app.useGlobalGuards(internalApiGuard);
-```
-
-로 사용한다. 
-
-→ controller와 method metadata를 한 번에 가져올 수는 없을까?
-
-```jsx
-@Roles('user')
-@Controller('cats')
-export class CatsController {
-  @Post()
-  @Roles('admin')
-  async create(@Body() createCatDto: CreateCatDto) {
-    this.catsService.create(createCatDto);
+// Improved Dynamic Module way of creating CONNECTION provider
+export class DatabaseModule {
+  static register(options: ConnectionOptions): DynamicModule {
+    return {
+      module: DatabaseModule,
+      providers: [
+        {
+          provide: 'CONNECTION', // 👈
+          useValue: createConnection(options),
+        }
+      ]
+    }
   }
 }
+
+// Utilizing the dynamic DatabaseModule in another Modules imports: []
+imports: [
+  DatabaseModule.register({ // 👈 passing in dynamic values
+    type: 'postgres',
+    host: 'localhost',
+    password: 'password',
+  })
+]
+
 ```
 
-1. getAllAndOverride()
+![https://images.velog.io/images/jujube0/post/e0c5813b-5912-4107-8c15-8adbd2045e1e/7558CA53-A827-4168-87A4-60AA0B8D1C94.png](https://images.velog.io/images/jujube0/post/e0c5813b-5912-4107-8c15-8adbd2045e1e/7558CA53-A827-4168-87A4-60AA0B8D1C94.png)
 
-    : 만약 `user` 를 default role로 지정하고, 메서드에 있는 것을 override하고 싶은 경우라면
+![https://images.velog.io/images/jujube0/post/cb848560-4ada-46fa-8680-b261f4d7e42d/0F3C4A9B-D954-42AD-8651-E8AF40D9CBF5.png](https://images.velog.io/images/jujube0/post/cb848560-4ada-46fa-8680-b261f4d7e42d/0F3C4A9B-D954-42AD-8651-E8AF40D9CBF5.png)
+
+### Control Providers Scope
+
+- Node는 싱글 스레드임
+- Nest에서 모든 provider는 기본적으로 singleton임
+
+```
+@Injectable({ scope: Scope.DEFAULT })
+export class CoffeesService {
+}
+
+```
+
+- Application이 `bootstrap()` 되면,모든 singleton provider가 instantiate됨.
+- provider가 request-based lifetime을 갖기를 원하면?
+
+두가지 scope option이 있다.
+
+1. **Transient**
+- NOT shared across consumers
+
+```
+@Injectable({ scope: Scope.TRANSIENT })
+export class CoffeesService {
+
+```
+
+- coffeeService를 `TRANSIENT` 로 바꾸면, 해당 provider를 inject하는 컨수머들은 모두 새로운 인스턴스를 갖게된다.
+-> 실제로 constructor body에 console을 찍어보면 확인 가능함.
+- custom provider에서도 scope option을 추가할 수 있다.
+1. **Request-Scoped**
+- creates a new instance of the provider exclusively for EACH incoming request.
+- automately Garbage collected after the request has completed
+- `npm run start` 를 해도 instance 가 만들어지지 않는다.
+- REQUEST 를 하나 보낼 떄마다 하나의 instantiated console이 뜬다.
+- 근데, service를 이용하는 controller는 아직 싱글톤이자나!!!
+-> Injection chain의 bubble-up이 일어난다. Request-scoped에 의존하는 controller 클래스도 Request-scoped가 된다는 것
+- also can inject the original Request Object {}
+
+```
+// Injecting the ORIGINAL Request object
+@Injectable({ scope: Scope.REQUEST })
+export class CoffeesService {
+  constructor(@Inject(REQUEST) private request: Request) {} // 👈
+}
+
+```
+
+- performance 저하 -> 왠만하면 singleton쓰자.
+
+# Introducing the Config Module
+
+- `npm i @nestjs/config`
+- root dir에 `.env` 파일을 만들어주자.
+- env 파일은 key-value로 민감한 정보들 / config 정보들을 저장하게 된다.
+
+    ![https://images.velog.io/images/jujube0/post/1c7ba3d1-7ce6-445e-bac6-907fd6e41bac/6253E1AF-A615-4B53-A1C0-487D92FF6DB9.png](https://images.velog.io/images/jujube0/post/1c7ba3d1-7ce6-445e-bac6-907fd6e41bac/6253E1AF-A615-4B53-A1C0-487D92FF6DB9.png)
+
+- 이런식으로 이용할 수 있다. default로 value는 string으로 가져오게 된다.
+
+```
+TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DATABASE_HOST,
+      port: +process.env.DATABASE_PORT,
+      username: process.env.DATABASE_USER,
+      password: process.env.DATABASE_PASSWORD,
+      database: process.env.DATABASE_NAME,
+      autoLoadEntities: true,
+      synchronize: true,
+    }),
+
+```
+
+## Custom Environment File Path
+
+- 기본적으로 ConfigModule은 root 디렉토리의 `.env` 파일을 찾는다. 이를 바꿔주려면?
+
+```
+ConfigModule.forRoot({
+  envFilePath: '.environment’,
+});
+
+```
+
+- string array를 넘겨줄 수도 있다.
+- production 환경에서 추후에 .env파일을 이용하지 않게 된 경우 `ignoreEnvFile: true` 를 옵션으로 넣어주자.
+
+## Schema Validation
+
+- env 변수가 존재하지 않거나, 룰을 따르지 않을 경우의 예외처리
+- joi package를 이용한다. object schema를 정의할 수 있다.
+
+```
+// Install neccessary dependencies
+$ npm install @hapi/joi
+$ npm install --save-dev @types/hapi__joi
+
+// Use Joi validation
+ConfigModule.forRoot({
+  validationSchema: Joi.object({
+    DATABASE_HOST: Joi.required(),
+    DATABASE_PORT: Joi.number().default(5432),
+  }),
+}),
+
+```
+
+- by default, 모든 스키마 키는 optional이다.
+- `Joi.required()`를 이용하여 `DATABASE_HOST` 를 필수로 만들었다.
+- `Joi.number` 로 number로 parsable한 조건을 추가하고, 디폴트 값을 5432로 설정했다.
+
+## Config Service
+
+- 모든 config value에 대해 `get()`
+- 이용하기 위해서는 해당 모듈에 import 해줘야한다.
+
+```
+@Module({
+    imports: [TypeOrmModule.forFeature([Coffee, Flavor, Event]), ConfigModule],
+    ...
+})
+
+```
+
+```
+/* Utilize ConfigService */
+import { ConfigService } from '@nestjs/config';
+
+constructor(
+  private readonly configService: ConfigService, // 👈
+) {}
+
+/* Accessing process.env variables from ConfigService */
+const databaseHost = this.configService.get<string>('DATABASE_HOST');
+console.log(databaseHost);
+
+```
+
+- get에 default value를 second param으로 넣어줄 수 있다.
+
+## Custom Configuration Files
+
+- group related settings
+- 하나의 파일에 한 그룹을 관리해보도록 하자 .
+- /src/config에 app.config.ts 파일 생성
+
+```
+/* /src/config/app.config.ts File */
+export default () => ({
+  environment: process.env.NODE_ENV || 'development',
+  database: {
+    host: process.env.DATABASE_HOST,
+    port: parseInt(process.env.DATABASE_PORT, 10) || 5432
+  }
+});
+/* Setting up "appConfig" within our Application */
+import appConfig from './config/app.config';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      load: [appConfig], // 👈
+    }),
+  ],
+})
+export class AppModule {}
+
+// ---------
+
+/**
+ * Grabbing this nested property within our App
+ * via "dot notation" (a.b)
+ */
+const databaseHost = this.configService.get('database.host', 'localhost');
+
+```
+
+- default value를 설정하거나, parsing을 할 수도 있다.
+- 이용하기 위해서는 app.module에 `load` 옵션을 추가해준다.
+- configService.get에 들어가는 param은 path가 된다.
+
+## Configuration Namespaces and Partial Registration
+
+- when we have very complex project structure
+
+```jsx
+/* /src/coffees/coffees.config.ts File */
+export default registerAs('coffees', () => ({ // 👈
+  foo: 'bar', // 👈
+}));
+
+/* Partial Registration of coffees namespaced configuration */
+@Module({
+  imports: [ConfigModule.forFeature(coffeesConfig)], // 👈
+})
+export class CoffeesModule {}
+
+// ---------
+// ⚠️ sub optimal ways of retrieving Config ⚠️
+
+/* Grab coffees config within App */
+const coffeesConfig = this.configService.get('coffees');
+console.log(coffeesConfig);
+
+/* Grab nested property within coffees config */
+const foo = this.configService.get('coffees.foo');
+console.log(foo);
+
+// ---------
+// 💡 Optimal / Best-practice 💡
+
+constructor(
+  @Inject(coffeesConfig.KEY)
+  private coffeesConfiguration: ConfigType<typeof coffeesConfig>,
+) {
+  // Now strongly typed, and able to access properties via:
+  console.log(coffeesConfiguration.foo);
+}
+
+```
+
+- > 실제 도메인과 가까운 곳에 config파일을 위치시킬 수 있다.
+- type inference가 가능하고, key로 직접 접근하기 때문에 typo 오류 등의 자잘한 오류를 방지할 수 있다.
+
+## Asynchronously Configure Dynamic Modules
+
+```
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      load: [appConfig]
+    }),
+    CoffeesModule,
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DATABASE_HOST,
+      port: +process.env.DATABASE_PORT,
+      username: process.env.DATABASE_USER,
+      password: process.env.DATABASE_PASSWORD,
+      database: process.env.DATABASE_NAME,
+      autoLoadEntities: true,
+      synchronize: true,
+    }),
+    CoffeeRatingModule,
+  ],
+
+```
+
+- 위의 app.module.ts 파일에서 ConfigModule과 TypeormModule을 import해주는 순서를 바꿔주면 에러가 난다. → process.env파일에서 key 값을 가져올 수 없기 때문.
+- 이를 해결하기 위해서 비동기적으로 configuration option을 가져오는 `forRootAsync()` method를 이용할 수 있다.
+
+```
+/* forRootAsync() */
+TypeOrmModule.forRootAsync({ // 👈
+  useFactory: () => ({
+    type: 'postgres',
+    host: process.env.DATABASE_HOST,
+    port: +process.env.DATABASE_PORT,
+    username: process.env.DATABASE_USER,
+    password: process.env.DATABASE_PASSWORD,
+    database: process.env.DATABASE_NAME,
+    autoLoadEntities: true,
+    synchronize: true,
+  }),
+}),
+
+```
+
+# Other Building Blocks
+
+- Exception filters
+handling and processing unhandled exceptions
+- Pipes
+handle transformation(transform input data to the desired output) and validstion(invalidate input data)
+- Guard
+determine whether a given Request meets certain conditions, like authentication, authorization, roles, ACLs...
+- @ Interceptors
+bind extra logic before or after the method call
+transform the result returned from a method
+extend basic method behavior
+override a method
+
+## Understanding Binding Techniques
+
+- GLOBAL-scoped
+- CONTROLLER-scoped
+- METHOD-scoped
+- PARAM-scoped(Pipes only)
+-> useful when the validation logic concern ONLY ONE specific parameter
+
+`UsePipes`
+
+![https://images.velog.io/images/jujube0/post/f621a43f-842a-468b-8e69-2bf5c908fab0/0E808697-EC98-4BC8-8C8F-0037154F570E.png](https://images.velog.io/images/jujube0/post/f621a43f-842a-468b-8e69-2bf5c908fab0/0E808697-EC98-4BC8-8C8F-0037154F570E.png)
+
+## Catch Exceptions with Filters
+
+- NESTJS의 built-in exception layer
+- 우리가 처리하지 않은 예외는 자동으로 위의 레이어로 이동한다.
+
+```
+// Generate Filter with Nest CLI
+nest g filter common/filters/http-exception
+
+// Catch decorator
+@Catch(HttpException)
+
+/* HttpExceptionFilter final code */
+import { Catch, HttpException, ExceptionFilter, ArgumentsHost } from "@nestjs/common";
+import { Response } from 'express';
+
+@Catch(HttpException)
+export class HttpExceptionFilter<T extends HttpException> implements ExceptionFilter {
+  catch(exception: T, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+
+    const status = exception.getStatus();
+    const exceptionResponse = exception.getResponse();
+    const error =
+      typeof response === 'string'
+        ? { message: exceptionResponse }
+        : (exceptionResponse as object);
+
+    response.status(status).json({
+      ...error,
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+
+```
+
+- HttpExeption이 일어날 때마다 하고 싶은 행동을 추가할 수 있다.
+
+## Protect Routes With Guards
+
+- request에 permission/roles/ACLs 등이 필요할 때
+- AUthentication / Authorization
+- authorization Header에 API_KEY가 존재하는지 확인하고,
+- 접근한 route가 public인지 확인해보자
+
+```jsx
+// Generate ApiKeyGuard with Nest CLI
+nest g guard common/guards/api-key
+
+// Apply ApiKeyGuard globally
+app.useGlobalGuards(new ApiKeyGuard());
+
+/* ApiKeyGuard code */
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { Request } from 'express';
+import { Observable } from 'rxjs';
+
+@Injectable()
+export class ApiKeyGuard implements CanActivate {
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    const request = context.switchToHttp().getRequest<Request>();
+    const authHeader = request.header('Authorization');
+    return authHeader === process.env.API_KEY;
+  }
+}
+
+```
+
+- `canActivate` : 현 request가 허용되었는지의 여부를 boolean으로 리턴한다.
+- Promise를 추가할 수도 있다.
+- false이면 403 forbidde을 리턴한다.
+
+## Using Metadata to Build Generic Guards or Interceptors
+
+- create custom Metadata by `@SetMetadata('key', 'value');`
+- value에는 type이 들어간다.
+
+```jsx
+/* public.decorator.ts FINAL CODE */
+import { SetMetadata } from '@nestjs/common';
+
+export const IS_PUBLIC_KEY = 'isPublic';
+
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+
+/* ApiKeyGuard FINAL CODE */
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
+import { Observable } from 'rxjs';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+
+@Injectable()
+export class ApiKeyGuard implements CanActivate {
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly configService: ConfigService,
+  ) {}
+
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    const isPublic = this.reflector.get(IS_PUBLIC_KEY, context.getHandler());
+    if (isPublic) {
+      return true;
+    }
+    const request = context.switchToHttp().getRequest<Request>();
+    const authHeader = request.header('Authorization');
+    return authHeader === this.configService.get('API_KEY');
+  }
+}
+
+```
+
+- **Reflector** : allow to retrieve metadata within a specific context
+- global guards that depend on other classes must be registered within a @Module context
+- `useGlobalGuard` 는 다른 모듈에 의존성을 갖지 않을 때만 이용이 가능하다.
+- public 인 문서에는 API_KEY 없이 접근 가능해졌다!!(왕씬끼)
+
+## Add Pointcuts with Interceptors
+
+- interceptor : 코드를 수정하지 않으면서 기능을 추가할 수 있다
+- method 실행 전/ 후로 로직을 추가하거나,
+- 결과를 transform
+- exeption transform
+- override method
+- extend basic method behavior
+- 모든 response에 결과가 data property로 들어가길 원한다고 가정해보자.
+- rxjs : alternative to Promise or callbacks
+
+```
+// Generate WrapResponseInterceptor with Nest CLI
+nest g interceptor common/interceptors/wrap-response
+
+/* WrapResponseInterceptor FINAL CODE */
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+} from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+
+@Injectable()
+export class WrapResponseInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    console.log('Before...');
+
+    return next.handle().pipe(map(data => ({ data })));
+  }
+}
+
+// Apply Interceptor globally in main.ts file
+app.useGlobalInterceptors(new WrapResponseInterceptor());
+
+```
+
+## Handling Timeouts with Interceptors
+
+- another technique with interceptor
+
+```
+/* Generate TimeoutInterceptor with Nest CLI */
+nest g interceptor common/interceptors/timeout
+
+/* Apply TimeoutInterceptor globally in main.ts file */
+
+app.useGlobalInterceptors(
+  new WrapResponseInterceptor(),
+  new TimeoutInterceptor(), // 👈
+);
+
+/* Add manual timeout to force timeout interceptor to work */
+await new Promise(resolve => setTimeout(resolve, 5000));
+
+/* TimeoutInterceptor FINAL CODE */
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+  RequestTimeoutException,
+} from '@nestjs/common';
+import { Observable, throwError, TimeoutError } from 'rxjs';
+import { catchError, timeout } from 'rxjs/operators';
+
+@Injectable()
+export class TimeoutInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    return next.handle().pipe(
+      timeout(3000),
+      catchError(err => {
+        if (err instanceof TimeoutError) {
+          return throwError(new RequestTimeoutException());
+        }
+        return throwError(err);
+      }),
+    );
+  }
+}
+
+```
+
+## Creating Custom Pipes
+
+Pipes have two typical use cases:
+Transformation: where we transform input data to the desired output
+& validation: where we evaluate input data and if valid, simply pass it through unchanged. If the data is NOT valid - we want to throw an exception.
+In both cases, pipes operate on the arguments being processed by a controller’s route handler.
+
+NestJS triggers a pipe just before a method is invoked.
+
+Pipes also receive the arguments meant to be passed on to the method. Any transformation or validation operation takes place at this time - afterwards the route handler is invoked with any (potentially) transformed arguments.
+
+- Imcoming string을 Int로 바꾸는 파이프를 만들어보자
+
+```
+// Generate ParseIntPipe with Nest CLI
+nest g pipe common/pipes/parse-int
+
+/* ParseIntPipe FINAL CODE */
+import {
+  ArgumentMetadata,
+  BadRequestException,
+  Injectable,
+  PipeTransform,
+} from '@nestjs/common';
+
+@Injectable()
+export class ParseIntPipe implements PipeTransform {
+  transform(value: string, metadata: ArgumentMetadata) {
+    const val = parseInt(value, 10);
+    if (isNaN(val)) {
+      throw new BadRequestException(
+        `Validation failed. "${val}" is not an integer.`,
+      );
+    }
+    return val;
+  }
+}
+
+```
+
+- value : input value
+- metadata: metadata of currently processed value
+
+## Add Request Logging with Middleware
+
+Middleware functions have access to the request and response objects, and are not specifically tied to any method, but rather to a specified route PATH.
+
+Middleware functions can perform the following tasks:
+
+- executing code
+- making changes to the request and the response objects.
+- ending the request-response cycle.
+- Or even calling the next middleware function in the call stack.
+
+When working with middleware, if the current middleware function does not END the request-response cycle, it must call the next() method, which passes control to the next middleware function.
+
+Otherwise, the request will be left hanging - and never complete.
+
+- could be either function or class
+class : stateless, can not inject dependency
+
+```
+// Generate LoggingMiddleware with Nest CLI
+nest g middleware common/middleware/logging
+
+// Apply LoggingMiddleware in our AppModule
+consumer
+  .apply(LoggingMiddleware)
+  .forRoutes(‘*’);
+
+/* LoggingMiddleware FINAL CODE */
+import {
+  Injectable,
+  NestMiddleware,
+} from '@nestjs/common';
+
+@Injectable()
+export class LoggingMiddleware implements NestMiddleware {
+  use(req: any, res: any, next: () => void) {
+    console.time('Request-response time');
+    console.log('Hi from middleware!');
+
+    res.on('finish', () => console.timeEnd('Request-response time'));
+    next();
+  }
+}
+
+```
+
+- common.module.ts
+
+```
+@Module({
+  imports: [ConfigModule],
+  providers: [{ provide: APP_GUARD, useClass: ApiKeyGuard }]
+})
+export class CommonModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggingMiddleware).forRoutes('*');
+    //OR
+    //     consumer.apply(LoggingMiddleware).forRoutes({ path: 'coffees', method: RequestMethod.GET});
+
+  }
+}
+
+```
+
+## Create Custom Param Decorators
+
+```
+// Using the Protocol decorator
+@Protocol(/* optional defaultValue */)
+
+/* @Protocal() decorator FINAL CODE */
+import {
+  createParamDecorator,
+  ExecutionContext,
+} from '@nestjs/common';
+
+export const Protocol = createParamDecorator(
+  (data: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.protocol;
+  },
+);
+
+```
+
+- `@Protocol(data)`에 넣은 data는 createParamDecorator의 첫번째 인자가 된다.
+
+# Generating OpenAPI Specification
+
+## Swagger Module
+
+- > use the OpenAPI specification. The OpenAPI specification is a language-agnostic definition format used to describe RESTful APIs.
+
+An OpenAPI document allows us to describe our entire API, including:
+
+- Available operations (endpoints)
+- Operation parameters: Input and output for each operation
+- Authentication methods
+- Contact information, license, terms of use and other information.
+
+```
+/**
+ * Installing @nestjs/swagger
+ * & Swagger UI for Express.js (which our application uses)
+ * 💡 Note: If your application is using Fastiy, install `fastify-swagger` instead
+ */
+npm install --save @nestjs/swagger swagger-ui-express
+
+// Setting up Swagger document main.ts bootstrap()
+const options = new DocumentBuilder()
+  .setTitle('Iluvcoffee')
+  .setDescription('Coffee application')
+  .setVersion('1.0')
+  .build();
+
+const document = SwaggerModule.createDocument(app, options);
+
+SwaggerModule.setup('api', app, document);
+
+/**
+ * With the App running (npm run start:dev if not)
+ * To view the Swagger UI go to:
+ * <http://localhost:3000/api>
+ */
+
+```
+
+# Testing
+
+```bash
+$ npm run test # for unit tests
+$ npm run test:cov # for test converage
+$ npm run test:e2e # for e2e tests
+```
+
+- 테스트 파일은 `*.spec.ts` 의 구조를 가져야 Nest 가 test file로 식별할 수 있다.
+- For e2e tests, these files are typically located in a dedicated `test` directory by default. e2e tests are typically grouped into separate files by the feature or functionality that they test. The file extension must be (dot).e2e-spec.ts.
+- unit test가 각각의 함수/클래스 테스트에 초점을 맞춘다면, end to end 테스트는 전체 시스템에 초점을 맞춘다.
+
+---
+
+```tsx
+import { Test, TestingModule } from '@nestjs/testing';
+import { CoffeesService } from './coffees.service';
+
+describe('CoffeesService', () => {
+  let service: CoffeesService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [CoffeesService],
+    }).compile();
+
+    service = module.get<CoffeesService>(CoffeesService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
+```
+
+- 기본적으로 `describe()` 함수가 여러개의 테스트 함수들을 그룹으로 묶는다.
+- `beforeEach` → 모든 테스트 이전에 할 행동들을 정의한다.
+
+    : Test class → full Nest 'runtime'을 mock한, application execution context를 제공한다. 
+
+    .compile() → module을 bootstrap한다. 모듈 인스턴스를 리턴한다. 
+
+    모듈 인스턴스가 컴파일 되면, `.get()` method를 통해 모든 정적 인스턴스를 가져올 수 있다. 
+
+    (request/transient-scoped provider의 경우 `.resolve()`
+
+    `it` → individual test
+
+    : unit test는 독립된 상태에서 이루어지는 것이 정석이다. 하지만 데이터베이스나 다른 provider들에 의존하고 있는 경우라면? → mock을 해주자. 
+
+    provider들 중에서 필요한 기능들만 mock해주면 되는 것.
 
     ```jsx
-    const roles = this.reflector.getAllAndOverride<string[]>('roles', [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    // Basic / empty "Mocks" for Entities in our CoffeesService 
+    providers: [
+      CoffeesService,
+      { provide: Connection, useValue: {} },
+      { provide: getRepositoryToken(Flavor), useValue: {} }, // 👈
+      { provide: getRepositoryToken(Coffee), useValue: {} }, // 👈
+    ]
     ```
 
-    result : `roles = ['admin']`
-
-2. getAllAndMerge
+    *getRepositoryToken은 nestjs/typeorm 에서 import 해야한다.
 
     ```jsx
-    const roles = this.reflector.getAllAndMerge<string[]>('roles', [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    /* 
+      coffees-service.spec.ts - FINAL CODE
+    */
+    import { Test, TestingModule } from '@nestjs/testing';
+    import { CoffeesService } from './coffees.service';
+    import { Connection, Repository } from 'typeorm';
+    import { getRepositoryToken } from '@nestjs/typeorm';
+    import { Flavor } from './entities/flavor.entity';
+    import { Coffee } from './entities/coffee.entity';
+    import { NotFoundException } from '@nestjs/common';
+
+    type MockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
+    const createMockRepository = <T = any>(): MockRepository<T> => ({
+      findOne: jest.fn(),
+      create: jest.fn(),
+    });
+
+    describe('CoffeesService', () => {
+      let service: CoffeesService;
+      let coffeeRepository: MockRepository;
+
+      beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+          providers: [
+            CoffeesService,
+            { provide: Connection, useValue: {} },
+            {
+              provide: getRepositoryToken(Flavor),
+              useValue: createMockRepository(),
+            },
+            {
+              provide: getRepositoryToken(Coffee),
+              useValue: createMockRepository(),
+            },
+          ],
+        }).compile();
+
+        service = module.get<CoffeesService>(CoffeesService);
+        coffeeRepository = module.get<MockRepository>(getRepositoryToken(Coffee));
+      });
+
+      it('should be defined', () => {
+        expect(service).toBeDefined();
+      });
+
+      describe('findOne', () => {
+        describe('when coffee with ID exists', () => {
+          it('should return the coffee object', async () => {
+            const coffeeId = '1';
+            const expectedCoffee = {};
+
+            coffeeRepository.findOne.mockReturnValue(expectedCoffee);
+            const coffee = await service.findOne(coffeeId);
+            expect(coffee).toEqual(expectedCoffee);
+          });
+        });
+        describe('otherwise', () => {
+          it('should throw the "NotFoundException"', async (done) => {
+            const coffeeId = '1';
+            coffeeRepository.findOne.mockReturnValue(undefined);
+
+            try {
+              await service.findOne(coffeeId);
+              done();
+            } catch (err) {
+              expect(err).toBeInstanceOf(NotFoundException);
+              expect(err.message).toEqual(`Coffee #${coffeeId} not found`);
+            }
+          });
+        });
+      });
+    });
     ```
 
-    result: `roles = ['user', 'admin']`
+    ## e2e Tests
+
+    ```jsx
+    import { Test, TestingModule } from '@nestjs/testing';
+    import { INestApplication } from '@nestjs/common';
+    import * as request from 'supertest';
+    import { AppModule } from './../src/app.module';
+
+    describe('AppController (e2e)', () => {
+      let app: INestApplication;
+
+      beforeEach(async () => {
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+          imports: [AppModule],
+        }).compile();
+
+        app = moduleFixture.createNestApplication();
+        await app.init();
+      });
+
+      it('/ (GET)', () => {
+        return request(app.getHttpServer())
+          .get('/')
+          .expect(200)
+          .expect('Hello World!');
+      });
+    });
+    ```
+
+    `createNestApplication` 을 이용하여 `app` variable 을 생성한다.
+
+    `it`:  supertest 에서 request를 가져와서 이용하고 있다.
+
+    ```jsx
+    npm run test:e2e
+    ```
+
+    ```jsx
+    /* 
+      app.e2e-spec.ts - FINAL CODE 
+    */
+    import { Test, TestingModule } from '@nestjs/testing';
+    import { INestApplication } from '@nestjs/common';
+    import * as request from 'supertest';
+    import { AppModule } from './../src/app.module';
+
+    describe('AppController (e2e)', () => {
+      let app: INestApplication;
+
+      beforeAll(async () => {
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+          imports: [AppModule],
+        }).compile();
+
+        app = moduleFixture.createNestApplication();
+        await app.init();
+      });
+
+      it('/ (GET)', () => {
+        return request(app.getHttpServer()) // 👈 
+          .get('/')
+          .set('Authorization', process.env.API_KEY) // 👈 
+          .expect(200)
+          .expect('Hello World!');
+      });
+
+      afterAll(async () => {
+        await app.close();
+      });
+    });
+    ```
+
+    app.close → data base connection을 닫아준다. 
+
+    ---
+
+    module 을 isolation 상태에서 테스트해보자.
+
+    ```jsx
+    import { Test, TestingModule } from '@nestjs/testing';
+    import { INestApplication } from '@nestjs/common';
+    import { CoffeesModule } from 'src/coffees/coffees.module';
+
+    describe('[Feature] Coffees - /coffees', () => {
+      let app: INestApplication;
+
+      beforeEach(async () => {
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+          imports: [CoffeesModule],
+        }).compile();
+
+        app = moduleFixture.createNestApplication();
+        await app.init();
+      });
+
+      it.todo('Create [POST /]');
+      it.todo('Get all [GET /]');
+      it.todo('Get one [GET /:id]');
+      it.todo('Update one [PATCH /:id]');
+      it.todo('Delete one [DELETE /:id]');
+
+      afterAll(async () => {
+        await app.close();
+      });
+    });
+    ```
+
+    1. Mock interactions with the database
+
+        → full isolation, but time consuming, error-prone, hard to maintain
+
+        → we can not test any interaction with a real database or queries
+
+    2. use a disk-based database
+
+        → dont need to mock, easy to maintain, easy to setup, fast
+
+        → DBMS 에 특화된 feature를 이용하지 못한다. 
+
+    3. add an additional testing database
+
+        → get same flow with real db
+
+3번째 방법을 이용할 예정
+
+```jsx
+/*
+  docker-compose.yml - FINAL CODE 
+*/
+version: "3"
+
+services:
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: pass123
+  test-db:
+    image: postgres
+    restart: always
+    ports:
+      - "5433:5432" # 👈 Note the 5433 port (since we are using 5432 for our regular db)
+    environment:
+      POSTGRES_PASSWORD: pass123
+
+/*
+ package.json pre & post hook additions
+*/
+
+"pretest:e2e": "docker-compose up -d test-db",
+"posttest:e2e": "docker-compose stop test-db && docker-compose rm -f test-db"
+
+/*
+
+/* 
+  test/coffees/coffees.e2e-spec.ts - FINAL CODE 
+*/
+import { INestApplication } from '@nestjs/common';
+import { TestingModule, Test } from '@nestjs/testing';
+import { CoffeesModule } from '../../src/coffees/coffees.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
+describe('[Feature] Coffees - /coffees', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [
+        CoffeesModule,
+        TypeOrmModule.forRoot({
+          type: 'postgres',
+          host: 'localhost',
+          port: 5433,
+          username: 'postgres',
+          password: 'pass123',
+          database: 'postgres',
+          autoLoadEntities: true,
+          synchronize: true,
+        }),
+      ],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
+
+  it.todo('Create [POST /]');
+  it.todo('Get all [GET /]');
+  it.todo('Get one [GET /:id]');
+  it.todo('Update one [PATCH /:id]');
+  it.todo('Delete one [DELETE /:id]');
+
+  afterAll(async () => {
+    await app.close();
+  });
+});
+```
+
+- test-db를 추가했다.
+
+    : 주의할 점은, port간 충돌이 일어나선 안된다.
+
+- app은 우리가 main.ts에서 정의한 application isnstance와 동일하게 동작하여야한다. 즉, 모든 configuration은 여기에도 추가되어야한다는 것.
+
+```jsx
+/* 
+  test/coffees/coffees.e2e-spec.ts - FINAL CODE 
+*/
+import { INestApplication, ValidationPipe, HttpStatus, HttpServer } from '@nestjs/common';
+import { TestingModule, Test } from '@nestjs/testing';
+import { CoffeesModule } from '../../src/coffees/coffees.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import * as request from 'supertest';
+import { CreateCoffeeDto } from 'src/coffees/dto/create-coffee.dto';
+import { UpdateCoffeeDto } from 'src/coffees/dto/update-coffee.dto';
+
+describe('[Feature] Coffees - /coffees', () => {
+  const coffee = {
+    name: 'Shipwreck Roast',
+    brand: 'Buddy Brew',
+    flavors: ['chocolate', 'vanilla'],
+  };
+  const expectedPartialCoffee = jasmine.objectContaining({
+    ...coffee,
+    flavors: jasmine.arrayContaining(
+      coffee.flavors.map(name => jasmine.objectContaining({ name })),
+    ),
+  });
+  let app: INestApplication;
+  let httpServer: HttpServer;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [
+        CoffeesModule,
+        TypeOrmModule.forRoot({
+          type: 'postgres',
+          host: 'localhost',
+          port: 5433,
+          username: 'postgres',
+          password: 'pass123',
+          database: 'postgres',
+          autoLoadEntities: true,
+          synchronize: true,
+        }),
+      ],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    );
+
+    await app.init();
+    httpServer = app.getHttpServer();
+  });
+
+  it('Create [POST /]', () => {
+    return request(httpServer)
+      .post('/coffees')
+      .send(coffee as CreateCoffeeDto)
+      .expect(HttpStatus.CREATED)
+      .then(({ body }) => {
+        expect(body).toEqual(expectedPartialCoffee);
+      });
+  });
+
+  it('Get all [GET /]', () => {
+    return request(httpServer)
+      .get('/coffees')
+      .then(({ body }) => {
+        console.log(body)
+        expect(body.length).toBeGreaterThan(0);
+        expect(body[0]).toEqual(expectedPartialCoffee);
+      });
+  });
+
+  it('Get one [GET /:id]', () => {
+    return request(httpServer)
+      .get('/coffees/1')
+      .then(({ body }) => {
+        expect(body).toEqual(expectedPartialCoffee);
+      });
+  });
+
+  it('Update one [PATCH /:id]', () => {
+    const updateCoffeeDto: UpdateCoffeeDto = {
+      ...coffee,
+      name: 'New and Improved Shipwreck Roast'
+    }
+    return request(httpServer)
+      .patch('/coffees/1')
+      .send(updateCoffeeDto)
+      .then(({ body }) => {
+        expect(body.name).toEqual(updateCoffeeDto.name);
+
+        return request(httpServer)
+          .get('/coffees/1')
+          .then(({ body }) => {
+            expect(body.name).toEqual(updateCoffeeDto.name);
+          });
+      });
+  });
+
+  it('Delete one [DELETE /:id]', () => {
+    return request(httpServer)
+      .delete('/coffees/1')
+      .expect(HttpStatus.OK)
+      .then(() => {
+        return request(httpServer)
+          .get('/coffees/1')
+          .expect(HttpStatus.NOT_FOUND);
+      })
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+});
+```
